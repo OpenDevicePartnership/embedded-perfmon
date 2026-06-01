@@ -1,12 +1,60 @@
 #![no_std]
 
-use embedded_perfmon_transport::{Event, EventKind, ExecutorEvent, ExecutorEventKind, GlobalEvent};
+use core::task::Poll;
 
-pub fn emit_tickrate_trace() {
+use embassy_executor::Spawner;
+use embedded_perfmon_transport::{
+    Event, EventKind, ExecutorEvent, ExecutorEventKind, GlobalEvent, TaskEvent, TaskEventKind,
+};
+
+pub async fn register_main(spawner: &Spawner) {
     _write_trace_event(Event {
         timestamp: _get_trace_event_timestamp(),
         kind: EventKind::Global(GlobalEvent::TickRate {
             rate: _get_trace_event_tickrate(),
+        }),
+    });
+
+    let main_task_ref =
+        core::future::poll_fn(|cx| Poll::Ready(embassy_executor::raw::task_from_waker(cx.waker())))
+            .await;
+
+    _write_trace_event(Event {
+        timestamp: _get_trace_event_timestamp(),
+        kind: EventKind::Task(TaskEvent {
+            task_id: main_task_ref.id(),
+            kind: TaskEventKind::TaskNew {
+                executor_id: spawner.executor_id() as u32,
+            },
+        }),
+    });
+
+    _write_trace_event(Event {
+        timestamp: _get_trace_event_timestamp(),
+        kind: EventKind::Task(TaskEvent {
+            task_id: main_task_ref.id(),
+            kind: TaskEventKind::TaskNamed { name: "main" },
+        }),
+    });
+}
+
+pub fn emit_global_marker(name: &str) {
+    _write_trace_event(Event {
+        timestamp: _get_trace_event_timestamp(),
+        kind: EventKind::Global(GlobalEvent::Marker { name }),
+    });
+}
+
+pub async fn emit_task_marker(name: &str) {
+    let task_ref =
+        core::future::poll_fn(|cx| Poll::Ready(embassy_executor::raw::task_from_waker(cx.waker())))
+            .await;
+
+    _write_trace_event(Event {
+        timestamp: _get_trace_event_timestamp(),
+        kind: EventKind::Task(TaskEvent {
+            task_id: task_ref.id(),
+            kind: TaskEventKind::Marker { name },
         }),
     });
 }
@@ -35,9 +83,9 @@ unsafe fn _embassy_trace_poll_start(executor_id: u32) {
 unsafe fn _embassy_trace_task_new(executor_id: u32, task_id: u32) {
     _write_trace_event(Event {
         timestamp: _get_trace_event_timestamp(),
-        kind: EventKind::Executor(ExecutorEvent {
-            executor_id,
-            kind: ExecutorEventKind::TaskNew { task_id },
+        kind: EventKind::Task(TaskEvent {
+            task_id,
+            kind: TaskEventKind::TaskNew { executor_id },
         }),
     });
 }
@@ -45,12 +93,12 @@ unsafe fn _embassy_trace_task_new(executor_id: u32, task_id: u32) {
 /// This callback is called AFTER a task is destructed/freed. This will always
 /// have a prior matching call to `_embassy_trace_task_new`.
 #[unsafe(no_mangle)]
-unsafe fn _embassy_trace_task_end(executor_id: u32, task_id: u32) {
+unsafe fn _embassy_trace_task_end(_executor_id: u32, task_id: u32) {
     _write_trace_event(Event {
         timestamp: _get_trace_event_timestamp(),
-        kind: EventKind::Executor(ExecutorEvent {
-            executor_id,
-            kind: ExecutorEventKind::TaskEnd { task_id },
+        kind: EventKind::Task(TaskEvent {
+            task_id,
+            kind: TaskEventKind::TaskEnd,
         }),
     });
 }
@@ -62,12 +110,12 @@ unsafe fn _embassy_trace_task_end(executor_id: u32, task_id: u32) {
 /// This marks the TASK state transition from WAITING -> RUNNING
 /// This marks the EXECUTOR state transition from SCHEDULING -> POLLING
 #[unsafe(no_mangle)]
-unsafe fn _embassy_trace_task_exec_begin(executor_id: u32, task_id: u32) {
+unsafe fn _embassy_trace_task_exec_begin(_executor_id: u32, task_id: u32) {
     _write_trace_event(Event {
         timestamp: _get_trace_event_timestamp(),
-        kind: EventKind::Executor(ExecutorEvent {
-            executor_id,
-            kind: ExecutorEventKind::TaskExecBegin { task_id },
+        kind: EventKind::Task(TaskEvent {
+            task_id,
+            kind: TaskEventKind::TaskExecBegin,
         }),
     });
 }
@@ -83,12 +131,12 @@ unsafe fn _embassy_trace_task_exec_begin(executor_id: u32, task_id: u32) {
 ///
 /// This marks the EXECUTOR state transition from POLLING -> SCHEDULING
 #[unsafe(no_mangle)]
-unsafe fn _embassy_trace_task_exec_end(executor_id: u32, task_id: u32) {
+unsafe fn _embassy_trace_task_exec_end(_executor_id: u32, task_id: u32) {
     _write_trace_event(Event {
         timestamp: _get_trace_event_timestamp(),
-        kind: EventKind::Executor(ExecutorEvent {
-            executor_id,
-            kind: ExecutorEventKind::TaskExecEnd { task_id },
+        kind: EventKind::Task(TaskEvent {
+            task_id,
+            kind: TaskEventKind::TaskExecEnd,
         }),
     });
 }
@@ -105,12 +153,12 @@ unsafe fn _embassy_trace_task_exec_end(executor_id: u32, task_id: u32) {
 /// NOTE: This may be called from an interrupt, outside the context of the current
 /// task or executor.
 #[unsafe(no_mangle)]
-unsafe fn _embassy_trace_task_ready_begin(executor_id: u32, task_id: u32) {
+unsafe fn _embassy_trace_task_ready_begin(_executor_id: u32, task_id: u32) {
     _write_trace_event(Event {
         timestamp: _get_trace_event_timestamp(),
-        kind: EventKind::Executor(ExecutorEvent {
-            executor_id,
-            kind: ExecutorEventKind::TaskReadyBegin { task_id },
+        kind: EventKind::Task(TaskEvent {
+            task_id,
+            kind: TaskEventKind::TaskReadyBegin,
         }),
     });
 }

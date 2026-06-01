@@ -448,6 +448,7 @@ dependencies = [
 name = "embedded-perfmon-runtime"
 version = "0.1.0"
 dependencies = [
+ "embassy-executor",
  "embedded-perfmon-transport",
 ]
 

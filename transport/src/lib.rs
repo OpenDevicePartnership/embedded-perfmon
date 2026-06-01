@@ -9,13 +9,14 @@ pub struct Event<'a> {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum EventKind<'a> {
-    Global(GlobalEvent),
+    Global(GlobalEvent<'a>),
+    Executor(ExecutorEvent),
     #[serde(borrow)]
-    Executor(ExecutorEvent<'a>),
+    Task(TaskEvent<'a>),
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum GlobalEvent {
+pub enum GlobalEvent<'a> {
     /// The timestamp tickrate per second. Should appear at least once in every trace.
     /// When emitted multiple times, only one of them is used.
     ///
@@ -25,33 +26,69 @@ pub enum GlobalEvent {
     IrqStart { irq: u16 },
     /// An interrupt has stopped
     IrqEnd { irq: u16 },
+    /// The user emitted a custom marker
+    Marker {
+        #[serde(borrow)]
+        name: &'a str,
+    },
+    /// The user started a custom span
+    SpanStart {
+        #[serde(borrow)]
+        name: &'a str,
+        id: u32,
+    },
+    /// The user ended the custom span with the specified id
+    SpanEnd { id: u32 },
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct ExecutorEvent<'a> {
+pub struct ExecutorEvent {
     pub executor_id: u32,
-    #[serde(borrow)]
-    pub kind: ExecutorEventKind<'a>,
+    pub kind: ExecutorEventKind,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum ExecutorEventKind<'a> {
+pub enum ExecutorEventKind {
     /// Executor exited the idle state
     ExecutorPollStart,
     /// Executor entered the idle state
     ExecutorIdle,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TaskEvent<'a> {
+    pub task_id: u32,
+    #[serde(borrow)]
+    pub kind: TaskEventKind<'a>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum TaskEventKind<'a> {
     /// A new task is created
-    TaskNew { task_id: u32 },
+    TaskNew { executor_id: u32 },
     /// A task has been stopped
-    TaskEnd { task_id: u32 },
+    TaskEnd,
     /// A task started being executed
-    TaskExecBegin { task_id: u32 },
+    TaskExecBegin,
     /// A task finished execution
-    TaskExecEnd { task_id: u32 },
+    TaskExecEnd,
     /// A task is now ready to be executed
-    TaskReadyBegin { task_id: u32 },
+    TaskReadyBegin,
     /// A task got assigned a human readable name
-    TaskNamed { task_id: u32, name: &'a str },
+    TaskNamed { name: &'a str },
+    /// The user emitted a custom marker
+    Marker {
+        #[serde(borrow)]
+        name: &'a str,
+    },
+    /// The user started a custom span
+    SpanStart {
+        #[serde(borrow)]
+        name: &'a str,
+        id: u32,
+    },
+    /// The user ended the custom span with the specified id
+    SpanEnd { id: u32 },
 }
 
 impl<'a> Event<'a> {

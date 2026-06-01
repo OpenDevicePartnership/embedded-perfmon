@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 embedded-perfmon-transport = { path = "../transport" }
+embassy-executor = { version = "0.10.0", default-features = false }

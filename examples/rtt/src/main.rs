@@ -41,7 +41,7 @@ async fn main(spawner: Spawner) {
         TRACE_CHANNEL = Some(channels.up.1);
     }
 
-    embedded_perfmon_runtime::emit_tickrate_trace();
+    embedded_perfmon_runtime::register_main(&spawner).await;
 
     let mut config = embassy_mcxa::config::Config::default();
     config.clock_cfg.sirc.fro_lf_div = Div8::from_divisor(1);
