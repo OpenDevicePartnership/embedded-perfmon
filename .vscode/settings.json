@@ -1,0 +1,8 @@
+{
+    "rust-analyzer.cargo.allTargets": false,
+    "rust-analyzer.linkedProjects": [
+        "Cargo.toml",
+        "examples/rtt/Cargo.toml",
+    ],
+    "rust-analyzer.cargo.targetDir": true
+}

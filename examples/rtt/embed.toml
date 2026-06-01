@@ -1,0 +1,48 @@
+[default.probe]
+# The protocol to be used for communicating with the target.
+protocol = "Swd"
+# The speed in kHz of the data link to the target.
+speed = 24000
+
+[default.flashing]
+# Whether or not the target should be flashed.
+enabled = true
+# Whether to verify flash contents before downloading
+preverify = true
+# Whether to verify flash contents after downloading
+verify = true
+
+[default.general]
+# The chip name of the chip to be debugged.
+chip = "MCXA276"
+
+[default.rtt]
+# Whether or not an RTTUI should be opened after flashing.
+enabled = true
+# The duration in ms for which the logger should retry to attach to RTT.
+timeout = 3000
+# Whether to save rtt history buffer on exit.
+log_enabled = true
+# Where to save rtt history buffer relative to manifest path.
+log_path = "./target/logs"
+# A list of up (target -> host) channel settings associations to be displayed. If left empty, all channels are displayed.
+# object key  - RTT channel identifier number
+# mode     (Optional) - RTT operation mode. Describes how the target handles RTT outputs that won't
+#                       fit in the buffer. If left unset, the firmware will determine the default
+#                       for each RTT up channel.
+#              * NoBlockSkip - Skip writing the data completely if it doesn't fit in its
+#                            entirety.
+#              * NoBlockTrim - Write as much as possible of the data and ignore the rest.
+#              * BlockIfFull - Spin until the host reads data.  Can result in app freezing.
+# format   (Optional) - How to interpret data from target firmware.  One of:
+#              * String - Directly show output from the target (default)
+#              * Defmt  - Format output on the host, see https://defmt.ferrous-systems.com/
+#              * BinaryLE - Display as raw hex
+# show_location (Optional) - Whether to show the location of defmt messages in the UI.
+# show_timestamps (Optional) - Whether to show the timestamps of String and Defmt messages in the UI, if available.
+# socket   (Optional) - Server socket address (for optional external frontend or endpoint).
+# log_format (Optional) - Control the output format for `format = Defmt`.
+up_channels = [
+    { channel = 0, mode = "BlockIfFull", format = "Defmt", show_location = true },
+    { channel = 1, mode = "BlockIfFull", format = "BinaryLE", show_timestamps = false },
+]
