@@ -77,9 +77,9 @@ unsafe fn _embassy_trace_task_exec_begin(executor_id: u32, task_id: u32) {
 ///
 /// This marks the TASK state transition from either:
 /// * RUNNING -> IDLE - if there were no `_embassy_trace_task_ready_begin` events
-///     for this task since the last `_embassy_trace_task_exec_begin` for THIS task
+///   for this task since the last `_embassy_trace_task_exec_begin` for THIS task
 /// * RUNNING -> WAITING - if there WAS a `_embassy_trace_task_ready_begin` event
-///     for this task since the last `_embassy_trace_task_exec_begin` for THIS task
+///   for this task since the last `_embassy_trace_task_exec_begin` for THIS task
 ///
 /// This marks the EXECUTOR state transition from POLLING -> SCHEDULING
 #[unsafe(no_mangle)]

@@ -16,6 +16,12 @@ struct Args {
 #[derive(Subcommand, Debug, Clone)]
 enum Command {
     Parse(ParseArgs),
+    Schema {
+        /// The path where the schema json is saved.
+        /// If not specified, the schema is outputted to stdout.
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    },
 }
 
 #[derive(clap::Args, Debug, Clone)]
@@ -40,7 +46,28 @@ fn main() -> anyhow::Result<()> {
 
     match args.command {
         Command::Parse(args) => parse(args),
+        Command::Schema { output } => schema(output),
     }
+}
+
+fn schema(output: Option<PathBuf>) -> anyhow::Result<()> {
+    let schema = schemars::SchemaGenerator::default().root_schema_for::<Capture>();
+
+    if let Some(output_path) = output {
+        let mut file = fs::File::create(&output_path).context(format!(
+            "creating output path at: {}",
+            output_path.display()
+        ))?;
+        serde_json::to_writer_pretty(&mut file, &schema)
+            .context("serializing schema to json and writing to file")?;
+    } else {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&schema).context("serializing schema to json")?
+        );
+    }
+
+    Ok(())
 }
 
 fn parse(args: ParseArgs) -> anyhow::Result<()> {
@@ -51,19 +78,19 @@ fn parse(args: ParseArgs) -> anyhow::Result<()> {
 
     let events = deserialize_events(&mut bytes)?;
 
-    let traces = Capture::parse_traces(&events);
+    let capture = Capture::parse_events(&events);
 
     if let Some(output_path) = args.output {
         let mut file = fs::File::create(&output_path).context(format!(
             "creating output path at: {}",
             output_path.display()
         ))?;
-        serde_json::to_writer_pretty(&mut file, &traces)
+        serde_json::to_writer_pretty(&mut file, &capture)
             .context("serializing traces to json and writing to file")?;
     } else {
         println!(
             "{}",
-            serde_json::to_string_pretty(&traces).context("serializing traces to json")?
+            serde_json::to_string_pretty(&capture).context("serializing traces to json")?
         );
     }
 

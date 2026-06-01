@@ -1,6 +1,7 @@
 use anyhow::Context;
 use embedded_perfmon_transport::{Event, EventKind, ExecutorEvent, ExecutorEventKind, GlobalEvent};
 use indexmap::IndexMap;
+use schemars::JsonSchema;
 use serde::Serialize;
 
 pub fn deserialize_events(mut bytes: &mut [u8]) -> anyhow::Result<Vec<Event<'_>>> {
@@ -30,7 +31,7 @@ pub fn deserialize_events(mut bytes: &mut [u8]) -> anyhow::Result<Vec<Event<'_>>
     Ok(events)
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, JsonSchema)]
 pub struct Capture {
     pub tickrate: u64,
     pub irq_traces: IndexMap<u16, Vec<TimedState<bool>>>,
@@ -38,7 +39,7 @@ pub struct Capture {
 }
 
 impl Capture {
-    pub fn parse_traces(events: &[Event<'_>]) -> Self {
+    pub fn parse_events(events: &[Event<'_>]) -> Self {
         let mut tickrate = 0;
         let mut irq_traces: IndexMap<u16, Vec<TimedState<bool>>> = IndexMap::new();
         let mut executor_traces: IndexMap<u32, Trace> = IndexMap::new();
@@ -77,7 +78,7 @@ impl Capture {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, JsonSchema)]
 pub enum TaskState {
     Spawned,
     Waiting,
@@ -88,20 +89,20 @@ pub enum TaskState {
     End,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, JsonSchema)]
 pub enum ExecutorState {
     Idle,
     Scheduling,
     Polling,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, JsonSchema)]
 pub struct TimedState<T> {
     pub timestamp: u64,
     pub state: T,
 }
 
-#[derive(Default, Serialize)]
+#[derive(Default, Serialize, JsonSchema)]
 pub struct Trace {
     pub executor: Vec<TimedState<ExecutorState>>,
     pub tasks: IndexMap<u32, Vec<TimedState<TaskState>>>,
