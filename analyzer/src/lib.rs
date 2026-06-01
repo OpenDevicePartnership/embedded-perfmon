@@ -40,6 +40,7 @@ pub struct Capture {
     pub tickrate: u64,
     pub irq_states: IndexMap<u16, Vec<TimedValue<bool>>>,
     pub global_markers: Vec<TimedValue<String>>,
+    pub global_spans: Vec<Span>,
     pub executor_states: IndexMap<u32, Vec<TimedValue<ExecutorState>>>,
     pub tasks: IndexMap<u32, Task>,
 }
@@ -49,6 +50,8 @@ impl Capture {
         let mut capture = Self::default();
 
         let mut executor_map = HashMap::new();
+        let mut inflight_spans = HashMap::new();
+        let mut inflight_task_spans = HashMap::new();
 
         for event in events {
             match &event.kind {
@@ -80,8 +83,22 @@ impl Capture {
                             state: name.to_string(),
                         });
                     }
-                    GlobalEvent::SpanStart { name, id } => todo!(),
-                    GlobalEvent::SpanEnd { id } => todo!(),
+                    GlobalEvent::SpanStart { name, id } => {
+                        inflight_spans.insert(
+                            id,
+                            Span {
+                                name: name.to_string(),
+                                start: event.timestamp,
+                                end: 0,
+                            },
+                        );
+                    }
+                    GlobalEvent::SpanEnd { id } => {
+                        if let Some(mut span) = inflight_spans.remove(id) {
+                            span.end = event.timestamp;
+                            capture.global_spans.push(span);
+                        }
+                    }
                 },
                 EventKind::Executor(executor_event) => {
                     Self::handle_executor_event(
@@ -113,6 +130,7 @@ impl Capture {
                         capture.tasks.entry(task_event.task_id).or_default(),
                         task_event,
                         event.timestamp,
+                        inflight_task_spans.entry(task_event.task_id).or_default(),
                     );
                 }
             }
@@ -155,6 +173,7 @@ impl Capture {
         task: &mut Task,
         event: &TaskEvent<'_>,
         timestamp: u64,
+        inflight_spans: &mut HashMap<u32, Span>,
     ) {
         let task_id = event.task_id;
 
@@ -298,8 +317,22 @@ impl Capture {
                     state: name.to_string(),
                 });
             }
-            TaskEventKind::SpanStart { name, id } => todo!(),
-            TaskEventKind::SpanEnd { id } => todo!(),
+            TaskEventKind::SpanStart { name, id } => {
+                inflight_spans.insert(
+                    id,
+                    Span {
+                        name: name.to_string(),
+                        start: timestamp,
+                        end: 0,
+                    },
+                );
+            }
+            TaskEventKind::SpanEnd { id } => {
+                if let Some(mut span) = inflight_spans.remove(&id) {
+                    span.end = timestamp;
+                    task.spans.push(span);
+                }
+            }
         }
     }
 }

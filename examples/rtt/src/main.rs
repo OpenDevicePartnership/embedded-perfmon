@@ -11,7 +11,7 @@ use embassy_mcxa::{
     peripherals::{self, ADC1, P1_14, P1_15},
 };
 use embassy_time::{Duration, Ticker, Timer};
-use embedded_perfmon_runtime as _;
+use embedded_perfmon_runtime::{self as _, SpanFutureExt};
 use embedded_perfmon_transport::Event;
 use panic_probe as _;
 use rtt_target::UpChannel;
@@ -47,11 +47,13 @@ async fn main(spawner: Spawner) {
     config.clock_cfg.sirc.fro_lf_div = Div8::from_divisor(1);
     let p = embassy_mcxa::init(config);
 
-    spawner.spawn(measure_adc(p.ADC1, p.P1_14, p.P1_15).unwrap());
-
     let mut red = Output::new(p.P3_18, Level::High, DriveStrength::Normal, SlewRate::Fast);
     let mut green = Output::new(p.P3_19, Level::High, DriveStrength::Normal, SlewRate::Fast);
     let mut blue = Output::new(p.P3_21, Level::High, DriveStrength::Normal, SlewRate::Fast);
+
+    embedded_perfmon_runtime::emit_global_marker("init done");
+
+    spawner.spawn(measure_adc(p.ADC1, p.P1_14, p.P1_15).unwrap());
 
     loop {
         defmt::info!("Toggle LEDs");
@@ -60,10 +62,12 @@ async fn main(spawner: Spawner) {
         Timer::after_millis(250).await;
 
         red.toggle();
+        let green_span = embedded_perfmon_runtime::start_global_span("green LED");
         green.toggle();
         Timer::after_millis(250).await;
 
         green.toggle();
+        drop(green_span);
         blue.toggle();
         Timer::after_millis(250).await;
         blue.toggle();
@@ -113,14 +117,14 @@ async fn measure_adc(
     adc.do_offset_calibration();
     adc.do_auto_calibration();
 
-    defmt::info!("=== ADC configuration done... ===");
+    embedded_perfmon_runtime::emit_task_marker("ADC configuration done").await;
     let mut tick = Ticker::every(Duration::from_millis(1000));
 
     loop {
         tick.next().await;
         adc.do_software_trigger(0b0001).unwrap();
 
-        while let Some(res) = adc.wait_get_conversion().await {
+        while let Some(res) = adc.wait_get_conversion().with_task_span("conversion").await {
             defmt::info!("ADC result: {}", res);
         }
     }
