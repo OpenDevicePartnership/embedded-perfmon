@@ -50,7 +50,7 @@ impl Capture {
         let mut capture = Self::default();
 
         let mut executor_map = HashMap::new();
-        let mut inflight_spans = HashMap::new();
+        let mut inflight_global_spans = IndexMap::new();
         let mut inflight_task_spans = HashMap::new();
 
         for event in events {
@@ -84,7 +84,7 @@ impl Capture {
                         });
                     }
                     GlobalEvent::SpanStart { name, id } => {
-                        inflight_spans.insert(
+                        inflight_global_spans.insert(
                             id,
                             Span {
                                 name: name.to_string(),
@@ -94,7 +94,7 @@ impl Capture {
                         );
                     }
                     GlobalEvent::SpanEnd { id } => {
-                        if let Some(mut span) = inflight_spans.remove(id) {
+                        if let Some(mut span) = inflight_global_spans.shift_remove(id) {
                             span.end = event.timestamp;
                             capture.global_spans.push(span);
                         }
@@ -113,7 +113,6 @@ impl Capture {
                 EventKind::Task(task_event) => {
                     let executor_id =
                         if let TaskEventKind::TaskNew { executor_id } = task_event.kind {
-                            println!("tasknew: {}", task_event.task_id);
                             Some(
                                 &*executor_map
                                     .entry(task_event.task_id)
@@ -132,6 +131,22 @@ impl Capture {
                         event.timestamp,
                         inflight_task_spans.entry(task_event.task_id).or_default(),
                     );
+                }
+            }
+        }
+
+        let last_event_time = events.last().map_or(0, |event| event.timestamp);
+
+        // Finish all inflight spans and just act like they ended together with the last event
+        for (_, mut global_span) in inflight_global_spans {
+            global_span.end = last_event_time;
+            capture.global_spans.push(global_span);
+        }
+        for (task_id, inflight_task_spans) in inflight_task_spans {
+            if let Some(task) = capture.tasks.get_mut(&task_id) {
+                for (_, mut task_span) in inflight_task_spans {
+                    task_span.end = last_event_time;
+                    task.spans.push(task_span);
                 }
             }
         }
@@ -173,7 +188,7 @@ impl Capture {
         task: &mut Task,
         event: &TaskEvent<'_>,
         timestamp: u64,
-        inflight_spans: &mut HashMap<u32, Span>,
+        inflight_spans: &mut IndexMap<u32, Span>,
     ) {
         let task_id = event.task_id;
 
@@ -328,7 +343,7 @@ impl Capture {
                 );
             }
             TaskEventKind::SpanEnd { id } => {
-                if let Some(mut span) = inflight_spans.remove(&id) {
+                if let Some(mut span) = inflight_spans.shift_remove(&id) {
                     span.end = timestamp;
                     task.spans.push(span);
                 }
