@@ -11,8 +11,7 @@ use embassy_mcxa::{
     peripherals::{self, ADC1, P1_14, P1_15},
 };
 use embassy_time::{Duration, Ticker, Timer};
-use embedded_perfmon_runtime::{self as _, SpanFutureExt};
-use embedded_perfmon_transport::Event;
+use embedded_perfmon_runtime::{self as _, SpanFutureExt, transport::Event};
 use panic_probe as _;
 use rtt_target::UpChannel;
 

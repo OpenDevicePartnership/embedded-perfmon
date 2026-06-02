@@ -16,7 +16,6 @@ panic-probe = { version = "1.0", features = ["print-defmt"] }
 rtt-target = { version = "0.6.2", features = ["defmt"] }
 
 embedded-perfmon-runtime = { path = "../../runtime" }
-embedded-perfmon-transport = { path = "../../transport" }
 
 [profile.release]
 lto = true # better optimizations

@@ -494,7 +494,6 @@ dependencies = [
  "embassy-sync",
  "embassy-time",
  "embedded-perfmon-runtime",
- "embedded-perfmon-transport",
  "panic-probe",
  "rtt-target",
 ]

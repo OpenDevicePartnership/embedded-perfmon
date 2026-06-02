@@ -10,6 +10,9 @@ use embedded_perfmon_transport::{
     Event, EventKind, ExecutorEvent, ExecutorEventKind, GlobalEvent, TaskEvent, TaskEventKind,
 };
 
+pub use embedded_perfmon_transport as transport;
+
+/// Register the main task so it's properly known
 pub async fn register_main(spawner: &Spawner) {
     _write_trace_event(Event {
         timestamp: _get_trace_event_timestamp(),
@@ -290,7 +293,14 @@ unsafe fn _embassy_mcxa_trace_irq_end(irq: u16) {
 }
 
 unsafe extern "Rust" {
+    /// Gets called for every event. The implementation should call [`Event::serialize`] to turn the event into bytes.
+    /// The bytes of multiple events form a byte stream that doesn't need additional framing. This byte stream can later
+    /// be consumed by the analyzer directly.
+    /// 
+    /// The stream may have gaps (at the cost of having incomplete trace data), but must be in order.
     safe fn _write_trace_event(event: Event<'_>);
+    /// Get the current time in ticks
     safe fn _get_trace_event_timestamp() -> u64;
+    /// Get the amount of ticks per second that the timestamp uses
     safe fn _get_trace_event_tickrate() -> u64;
 }
