@@ -1,0 +1,4 @@
+- Run this project using `cargo embed` to get the trace data.
+- After a few seconds of running, press `ctrl+C` to quit.
+- You'll find the logs in ./target/logs.
+- The `*_channel1.dat` file contains the trace data and can be fed into the CLI.
