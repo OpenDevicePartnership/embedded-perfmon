@@ -26,3 +26,6 @@ embassy-executor = { git = "https://github.com/embassy-rs/embassy.git", rev = "2
 embassy-mcxa = { git = "https://github.com/embassy-rs/embassy.git", rev = "20830b2bdafd9becbebd9d8f26c991d3f61dce4f" }
 embassy-sync = { git = "https://github.com/embassy-rs/embassy.git", rev = "20830b2bdafd9becbebd9d8f26c991d3f61dce4f" }
 embassy-time = { git = "https://github.com/embassy-rs/embassy.git", rev = "20830b2bdafd9becbebd9d8f26c991d3f61dce4f" }
+
+[features]
+start-stop = ["embedded-perfmon-runtime/start-stop"]

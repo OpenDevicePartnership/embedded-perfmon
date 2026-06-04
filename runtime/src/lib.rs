@@ -11,16 +11,20 @@ pub use embedded_perfmon_transport as transport;
 
 mod marker;
 mod span;
+#[cfg(feature = "start-stop")]
+mod start_stop;
 
 pub use marker::*;
 pub use span::*;
+#[cfg(feature = "start-stop")]
+pub use start_stop::*;
 
 /// Register the main task so it's properly known
 pub async fn register_main(spawner: &Spawner) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Global(GlobalEvent::TickRate {
-            rate: _get_trace_event_tickrate(),
+            rate: get_trace_event_tickrate(),
         }),
     });
 
@@ -28,8 +32,8 @@ pub async fn register_main(spawner: &Spawner) {
         core::future::poll_fn(|cx| Poll::Ready(embassy_executor::raw::task_from_waker(cx.waker())))
             .await;
 
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Task(TaskEvent {
             task_id: main_task_ref.id(),
             kind: TaskEventKind::TaskNew {
@@ -38,8 +42,8 @@ pub async fn register_main(spawner: &Spawner) {
         }),
     });
 
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Task(TaskEvent {
             task_id: main_task_ref.id(),
             kind: TaskEventKind::TaskNamed { name: "main" },
@@ -53,8 +57,8 @@ pub async fn register_main(spawner: &Spawner) {
 /// This marks the EXECUTOR state transition from IDLE -> SCHEDULING.
 #[unsafe(no_mangle)]
 unsafe fn _embassy_trace_poll_start(executor_id: u32) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Executor(ExecutorEvent {
             executor_id,
             kind: ExecutorEventKind::ExecutorPollStart,
@@ -69,8 +73,8 @@ unsafe fn _embassy_trace_poll_start(executor_id: u32) {
 /// Tasks start life in the SPAWNED state.
 #[unsafe(no_mangle)]
 unsafe fn _embassy_trace_task_new(executor_id: u32, task_id: u32) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Task(TaskEvent {
             task_id,
             kind: TaskEventKind::TaskNew { executor_id },
@@ -82,8 +86,8 @@ unsafe fn _embassy_trace_task_new(executor_id: u32, task_id: u32) {
 /// have a prior matching call to `_embassy_trace_task_new`.
 #[unsafe(no_mangle)]
 unsafe fn _embassy_trace_task_end(_executor_id: u32, task_id: u32) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Task(TaskEvent {
             task_id,
             kind: TaskEventKind::TaskEnd,
@@ -99,8 +103,8 @@ unsafe fn _embassy_trace_task_end(_executor_id: u32, task_id: u32) {
 /// This marks the EXECUTOR state transition from SCHEDULING -> POLLING
 #[unsafe(no_mangle)]
 unsafe fn _embassy_trace_task_exec_begin(_executor_id: u32, task_id: u32) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Task(TaskEvent {
             task_id,
             kind: TaskEventKind::TaskExecBegin,
@@ -120,8 +124,8 @@ unsafe fn _embassy_trace_task_exec_begin(_executor_id: u32, task_id: u32) {
 /// This marks the EXECUTOR state transition from POLLING -> SCHEDULING
 #[unsafe(no_mangle)]
 unsafe fn _embassy_trace_task_exec_end(_executor_id: u32, task_id: u32) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Task(TaskEvent {
             task_id,
             kind: TaskEventKind::TaskExecEnd,
@@ -142,8 +146,8 @@ unsafe fn _embassy_trace_task_exec_end(_executor_id: u32, task_id: u32) {
 /// task or executor.
 #[unsafe(no_mangle)]
 unsafe fn _embassy_trace_task_ready_begin(_executor_id: u32, task_id: u32) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Task(TaskEvent {
             task_id,
             kind: TaskEventKind::TaskReadyBegin,
@@ -158,8 +162,8 @@ unsafe fn _embassy_trace_task_ready_begin(_executor_id: u32, task_id: u32) {
 /// This marks the EXECUTOR state transition from SCHEDULING -> IDLE
 #[unsafe(no_mangle)]
 unsafe fn _embassy_trace_executor_idle(executor_id: u32) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Executor(ExecutorEvent {
             executor_id,
             kind: ExecutorEventKind::ExecutorIdle,
@@ -169,29 +173,54 @@ unsafe fn _embassy_trace_executor_idle(executor_id: u32) {
 
 #[unsafe(no_mangle)]
 unsafe fn _embassy_mcxa_trace_irq_start(irq: u16) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Global(GlobalEvent::IrqStart { irq }),
     });
 }
 
 #[unsafe(no_mangle)]
 unsafe fn _embassy_mcxa_trace_irq_end(irq: u16) {
-    _write_trace_event(Event {
-        timestamp: _get_trace_event_timestamp(),
+    write_trace_event(Event {
+        timestamp: get_trace_event_timestamp(),
         kind: EventKind::Global(GlobalEvent::IrqEnd { irq }),
     });
 }
 
-unsafe extern "Rust" {
-    /// Gets called for every event. The implementation should call [`Event::serialize`] to turn the event into bytes.
-    /// The bytes of multiple events form a byte stream that doesn't need additional framing. This byte stream can later
-    /// be consumed by the analyzer directly.
-    ///
-    /// The stream may have gaps (at the cost of having incomplete trace data), but must be in order.
-    safe fn _write_trace_event(event: Event<'_>);
-    /// Get the current time in ticks
-    safe fn _get_trace_event_timestamp() -> u64;
-    /// Get the amount of ticks per second that the timestamp uses
-    safe fn _get_trace_event_tickrate() -> u64;
+#[inline(always)]
+#[cfg(not(feature = "start-stop"))]
+fn write_trace_event(event: Event<'_>) {
+    external::_write_trace_event(event);
+}
+
+#[inline(always)]
+fn get_trace_event_timestamp() -> u64 {
+    external::_get_trace_event_timestamp()
+}
+#[inline(always)]
+fn get_trace_event_tickrate() -> u64 {
+    external::_get_trace_event_tickrate()
+}
+
+mod external {
+    use embedded_perfmon_transport::Event;
+
+    unsafe extern "Rust" {
+        /// Gets called for every event. The implementation should call [`Event::serialize`] to turn the event into bytes.
+        /// The bytes of multiple events form a byte stream that doesn't need additional framing. This byte stream can later
+        /// be consumed by the analyzer directly.
+        ///
+        /// The stream may have gaps (at the cost of having incomplete trace data), but must be in order.
+        ///
+        /// This function can get called from interrupts too. Make sure the impl is threadsafe.
+        pub safe fn _write_trace_event(event: Event<'_>);
+        /// Get the current time in ticks
+        ///
+        /// This function can get called from interrupts too. Make sure the impl is threadsafe.
+        pub safe fn _get_trace_event_timestamp() -> u64;
+        /// Get the amount of ticks per second that the timestamp uses
+        ///
+        /// This function can get called from interrupts too. Make sure the impl is threadsafe.
+        pub safe fn _get_trace_event_tickrate() -> u64;
+    }
 }

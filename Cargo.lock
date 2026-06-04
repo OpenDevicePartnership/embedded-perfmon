@@ -258,8 +258,10 @@ dependencies = [
 name = "embedded-perfmon-runtime"
 version = "0.1.0"
 dependencies = [
+ "critical-section",
  "embassy-executor",
  "embedded-perfmon-transport",
+ "heapless",
 ]
 
 [[package]]

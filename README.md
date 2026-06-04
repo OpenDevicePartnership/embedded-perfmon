@@ -23,6 +23,9 @@ Implement the runtime functions for writing trace events and getting time data. 
 
 Check out the runtime docs to see what tracing functions you can or should call during your application.
 
+By default the tracing will always run. If you want to be able to start and stop the tracing, then use the `start-stop` cargo feature of the runtime.
+This adds the required caching so all info that needs to be captured will be present and emitted when start is called.
+
 ## Guide for analyzing
 
 Collect the trace byte stream from your device. Then use the analyzer lib or cli to get processed values of out of it.

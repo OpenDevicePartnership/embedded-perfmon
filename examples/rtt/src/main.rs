@@ -54,8 +54,21 @@ async fn main(spawner: Spawner) {
 
     spawner.spawn(measure_adc(p.ADC1, p.P1_14, p.P1_15).unwrap());
 
+    let mut index = 0u32;
+
     loop {
-        defmt::info!("Toggle LEDs");
+        defmt::info!("{}: Toggle LEDs", index);
+
+        #[cfg(feature = "start-stop")]
+        if index == 2 {
+            defmt::info!("Starting");
+            embedded_perfmon_runtime::start_tracing();
+        }
+        #[cfg(feature = "start-stop")]
+        if index == 5 {
+            defmt::info!("Stopping");
+            embedded_perfmon_runtime::stop_tracing();
+        }
 
         red.toggle();
         Timer::after_millis(250).await;
@@ -72,6 +85,8 @@ async fn main(spawner: Spawner) {
         blue.toggle();
 
         Timer::after_millis(250).await;
+
+        index += 1;
     }
 }
 
