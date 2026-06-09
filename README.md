@@ -33,6 +33,3 @@ This adds the required caching so all info that needs to be captured will be pre
 Collect the trace byte stream from your device. Then use the analyzer lib or cli to get processed values of out of it.
 
 You can get a json schema for the output data by running the cli with the `schema` command.
-
-## TODO
-- Hook into task metadata for names and prio/deadline
