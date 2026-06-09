@@ -76,6 +76,10 @@ pub enum TaskEventKind<'a> {
     TaskReadyBegin,
     /// A task got assigned a human readable name
     TaskNamed { name: &'a str },
+    /// A task got its priority changed
+    PrioritySet { priority: u8 },
+    /// A task got its deadline changed
+    DeadlineSet { deadline: u64 },
     /// The user emitted a custom marker
     Marker {
         #[serde(borrow)]

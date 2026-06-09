@@ -348,6 +348,18 @@ impl Capture {
                     task.spans.push(span);
                 }
             }
+            TaskEventKind::PrioritySet { priority } => {
+                task.priorities.push(TimedValue {
+                    timestamp,
+                    state: priority,
+                });
+            }
+            TaskEventKind::DeadlineSet { deadline } => {
+                task.deadlines.push(TimedValue {
+                    timestamp,
+                    state: deadline,
+                });
+            }
         }
     }
 }
@@ -358,6 +370,8 @@ pub struct Task {
     pub markers: Vec<TimedValue<String>>,
     pub spans: Vec<Span>,
     pub states: Vec<TimedValue<TaskState>>,
+    pub priorities: Vec<TimedValue<u8>>,
+    pub deadlines: Vec<TimedValue<u64>>,
 }
 
 #[derive(Serialize, JsonSchema)]

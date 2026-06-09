@@ -8,24 +8,24 @@ cortex-m = { version = "0.7", features = ["critical-section-single-core"] }
 cortex-m-rt = { version = "0.7", features = ["set-sp", "set-vtor"] }
 
 defmt = "1.0"
-embassy-executor = { version = "0.10.0", default-features = false, features = ["platform-cortex-m", "executor-thread", "defmt", "trace"] }
+embassy-executor = { version = "0.10.0", default-features = false, features = ["platform-cortex-m", "executor-thread", "defmt", "trace", "metadata-name", "scheduler-deadline", "scheduler-priority"] }
 embassy-mcxa = { version = "0.1.0", features = ["defmt", "unstable-pac", "mcxa2xx", "embedded-mcu-hal", "trace"] }
 embassy-sync = { version = "0.8.0" }
 embassy-time = { version = "0.5.1", features = ["defmt", "defmt-timestamp-uptime"] }
 panic-probe = { version = "1.0", features = ["print-defmt"] }
 rtt-target = { version = "0.6.2", features = ["defmt"] }
 
-embedded-perfmon-runtime = { path = "../../runtime" }
+embedded-perfmon-runtime = { path = "../../runtime", features = ["priority", "deadline"]}
 
 [profile.release]
 lto = true # better optimizations
 debug = 2  # enough information for defmt/rtt locations
 
 [patch.crates-io]
-embassy-executor = { git = "https://github.com/embassy-rs/embassy.git", rev = "20830b2bdafd9becbebd9d8f26c991d3f61dce4f" }
-embassy-mcxa = { git = "https://github.com/embassy-rs/embassy.git", rev = "20830b2bdafd9becbebd9d8f26c991d3f61dce4f" }
-embassy-sync = { git = "https://github.com/embassy-rs/embassy.git", rev = "20830b2bdafd9becbebd9d8f26c991d3f61dce4f" }
-embassy-time = { git = "https://github.com/embassy-rs/embassy.git", rev = "20830b2bdafd9becbebd9d8f26c991d3f61dce4f" }
+embassy-executor = { git = "https://github.com/embassy-rs/embassy.git", rev = "9c6e136be6eb4615032a36e2dbb0a58e64280bec" }
+embassy-mcxa = { git = "https://github.com/embassy-rs/embassy.git", rev = "9c6e136be6eb4615032a36e2dbb0a58e64280bec" }
+embassy-sync = { git = "https://github.com/embassy-rs/embassy.git", rev = "9c6e136be6eb4615032a36e2dbb0a58e64280bec" }
+embassy-time = { git = "https://github.com/embassy-rs/embassy.git", rev = "9c6e136be6eb4615032a36e2dbb0a58e64280bec" }
 
 [features]
 start-stop = ["embedded-perfmon-runtime/start-stop"]

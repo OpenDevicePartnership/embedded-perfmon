@@ -52,7 +52,9 @@ async fn main(spawner: Spawner) {
 
     embedded_perfmon_runtime::emit_global_marker("init done");
 
-    spawner.spawn(measure_adc(p.ADC1, p.P1_14, p.P1_15).unwrap());
+    let measure_adc_token = measure_adc(p.ADC1, p.P1_14, p.P1_15).unwrap();
+    measure_adc_token.metadata().set_name("measure_adc");
+    spawner.spawn(measure_adc_token);
 
     let mut index = 0u32;
 
@@ -133,6 +135,10 @@ async fn measure_adc(
 
     embedded_perfmon_runtime::emit_task_marker("ADC configuration done").await;
     let mut tick = Ticker::every(Duration::from_millis(1000));
+
+    embassy_executor::MetadataRef::for_current_task()
+        .await
+        .set_priority(1);
 
     loop {
         tick.next().await;

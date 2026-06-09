@@ -2,6 +2,8 @@
 
 An opinionated tool to gather, transport and analyze embassy trace data.
 
+Currently depends on this pr: https://github.com/embassy-rs/embassy/pull/6290
+
 Parts of the project:
 - `embedded-perfmon-runtime`: The main crate the firmware interacts with.
   - defines the required global functions to gather the trace

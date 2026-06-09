@@ -2,3 +2,6 @@
 resolver = "3"
 members = ["analyzer", "runtime", "transport"]
 exclude = ["examples/rtt"]
+
+[patch.crates-io]
+embassy-executor = { git = "https://github.com/embassy-rs/embassy.git", rev = "9c6e136be6eb4615032a36e2dbb0a58e64280bec" }

@@ -213,8 +213,7 @@ checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 [[package]]
 name = "embassy-executor"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d0d3b15c9d7dc4fec1d8cb77112472fb008b3b28c51ad23838d83587a6d2f1e"
+source = "git+https://github.com/embassy-rs/embassy.git?rev=9c6e136be6eb4615032a36e2dbb0a58e64280bec#9c6e136be6eb4615032a36e2dbb0a58e64280bec"
 dependencies = [
  "cordyceps",
  "critical-section",
@@ -226,8 +225,7 @@ dependencies = [
 [[package]]
 name = "embassy-executor-macros"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d11a246f53de5f97a387f40ac24726817cd0b6f833e7603baac784f29d6ff276"
+source = "git+https://github.com/embassy-rs/embassy.git?rev=9c6e136be6eb4615032a36e2dbb0a58e64280bec#9c6e136be6eb4615032a36e2dbb0a58e64280bec"
 dependencies = [
  "darling",
  "proc-macro2",
@@ -238,8 +236,7 @@ dependencies = [
 [[package]]
 name = "embassy-executor-timer-queue"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fc328bf943af66b80b98755db9106bf7e7471b0cf47dc8559cd9a6be504cc9c"
+source = "git+https://github.com/embassy-rs/embassy.git?rev=9c6e136be6eb4615032a36e2dbb0a58e64280bec#9c6e136be6eb4615032a36e2dbb0a58e64280bec"
 
 [[package]]
 name = "embedded-perfmon-analyzer"

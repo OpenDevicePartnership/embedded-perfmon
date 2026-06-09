@@ -84,6 +84,28 @@ pub(crate) fn write_trace_event(event: Event<'static>) {
 
                 task_data.last_state_event = Some(kind.clone());
             }
+            #[cfg(feature = "priority")]
+            EventKind::Task(TaskEvent {
+                task_id,
+                kind: TaskEventKind::PrioritySet { priority },
+            }) => {
+                let Ok(task_data) = state.task_data.entry(*task_id).or_default() else {
+                    panic!("task cache full");
+                };
+
+                task_data.priority = Some(*priority);
+            }
+            #[cfg(feature = "deadline")]
+            EventKind::Task(TaskEvent {
+                task_id,
+                kind: TaskEventKind::DeadlineSet { deadline },
+            }) => {
+                let Ok(task_data) = state.task_data.entry(*task_id).or_default() else {
+                    panic!("task cache full");
+                };
+
+                task_data.deadline = Some(*deadline);
+            }
             _ => {}
         }
 
@@ -129,6 +151,10 @@ struct TaskData {
     name: Option<&'static str>,
     executor_id: Option<u32>,
     last_state_event: Option<TaskEventKind<'static>>,
+    #[cfg(feature = "priority")]
+    priority: Option<u8>,
+    #[cfg(feature = "deadline")]
+    deadline: Option<u64>,
 }
 
 impl TaskData {
@@ -159,6 +185,28 @@ impl TaskData {
                 kind: EventKind::Task(TaskEvent {
                     task_id,
                     kind: last_state_event.clone(),
+                }),
+            });
+        }
+
+        #[cfg(feature = "priority")]
+        if let Some(priority) = self.priority {
+            crate::external::_write_trace_event(Event {
+                timestamp,
+                kind: EventKind::Task(TaskEvent {
+                    task_id,
+                    kind: TaskEventKind::PrioritySet { priority },
+                }),
+            });
+        }
+
+        #[cfg(feature = "deadline")]
+        if let Some(deadline) = self.deadline {
+            crate::external::_write_trace_event(Event {
+                timestamp,
+                kind: EventKind::Task(TaskEvent {
+                    task_id,
+                    kind: TaskEventKind::DeadlineSet { deadline },
                 }),
             });
         }

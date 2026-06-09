@@ -45,14 +45,14 @@ pub async fn start_task_span(name: &'static str) -> TaskSpan {
     write_trace_event(Event {
         timestamp: get_trace_event_timestamp(),
         kind: EventKind::Task(TaskEvent {
-            task_id: task_ref.id(),
+            task_id: task_ref.id().get() as u32,
             kind: TaskEventKind::SpanStart { name, id },
         }),
     });
 
     TaskSpan {
         id,
-        task_id: task_ref.id(),
+        task_id: task_ref.id().get() as u32,
     }
 }
 

@@ -14,3 +14,7 @@ critical-section = { version = "1.2.0", optional = true }
 # Allows you to start and stop the tracing at the cost of having a cache layer.
 # If the feature is not active, then tracing is always running.
 start-stop = ["dep:heapless", "dep:critical-section"]
+# Support priority tracking. This must be on if you've turned on the priority scheduler for embassy
+priority = []
+# Support deadline tracking. This must be on if you've turned on the priority scheduler for embassy
+deadline = []
